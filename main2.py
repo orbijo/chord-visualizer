@@ -1,13 +1,12 @@
-import matplotlib.pyplot as plt
-from scipy.fftpack import fft
-from scipy.io import wavfile
 import os
 import numpy as np
-import tqdm
+import matplotlib.pyplot as plt
+from scipy.io import wavfile
 import plotly.graph_objects as go
-import glob
-import time
 import subprocess
+import glob
+import tqdm
+import time
 
 PATH = 'audio'
 
@@ -97,7 +96,10 @@ def find_top_notes(fft,num):
 
   return found
 
-directory = './content/'
+directory = 'content'
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
 png_files = glob.glob(os.path.join(directory, '*.png'))
 for file in png_files:
     os.remove(file)
@@ -141,7 +143,7 @@ for frame_number in tqdm.tqdm(range(min(FRAME_COUNT, MAX_FRAMES))):
     s = find_top_notes(fft, TOP_NOTES)
 
     fig = plot_fft(fft.real, xf, fs, s, RESOLUTION)
-    fig.write_image(f"/content/frame{frame_number}.png", scale=2)
+    fig.write_image(os.path.join(directory, f"frame{frame_number}.png"), scale=2)
 
     elapsed_time = time.time() - start_time
     print(f"Frame {frame_number} processed in {elapsed_time:.2f} seconds.")
@@ -152,7 +154,7 @@ command = [
     "-r", str(FPS),  # Set frame rate
     "-f", "image2",  # Specify image sequence format
     "-s", "1920x1080",  # Output resolution
-    "-i", "frame%d.png",  # Input file pattern for frames
+    "-i", os.path.join(directory, "frame%d.png"),  # Input file pattern for frames
     "-i", os.path.join(PATH, AUDIO_FILE),  # Input audio file
     "-c:v", "libx264",  # Video codec
     "-pix_fmt", "yuv420p",  # Pixel format
