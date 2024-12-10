@@ -3,20 +3,24 @@ import plotly.graph_objects as go
 import pygame
 import threading
 import queue
-import time
+import sounddevice as sd
 
 # Pygame configuration
 pygame.init()
 WIDTH, HEIGHT = 1280, 720
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Chord Visualizer")
+pygame.display.set_caption("Chord Visualizer V2")
 CLOCK = pygame.time.Clock()
-FPS = 30
+FPS = 60
 
 # Audio configuration
 RATE = 44100
 FFT_WINDOW_SECONDS = 0.25
 FFT_WINDOW_SIZE = int(RATE * FFT_WINDOW_SECONDS)
+
+FREQ_MIN = 10
+FREQ_MAX = 12500
+
 TOP_NOTES = 3
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -41,6 +45,8 @@ def find_top_notes(fft, xf, num):
         if len(found) >= num:
             break
         f = xf[lst[idx][0]]
+        if f < FREQ_MIN or f > FREQ_MAX:
+            continue
         y = lst[idx][1]
         n = freq_to_number(f)
         if n == -np.inf:
@@ -53,8 +59,10 @@ def find_top_notes(fft, xf, num):
     return found
 
 def generate_plotly_frame(fft, xf, top_notes):
+    filtered_fft = [(f, amp) for f, amp in zip(xf, fft) if FREQ_MIN <= f <= FREQ_MAX]
+    filtered_xf, filtered_amp = zip(*filtered_fft)
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=xf, y=fft, mode='lines', name='FFT'))
+    fig.add_trace(go.Scatter(x=filtered_xf, y=filtered_amp, mode='lines', name='FFT', line=dict(smoothing=1.3)))  # Add smoothing to lines
     for note in top_notes:
         fig.add_annotation(x=note[0], y=note[2], text=note[1], showarrow=True, arrowhead=1)
     fig.update_layout(width=WIDTH, height=HEIGHT, xaxis_title="Frequency", yaxis_title="Magnitude")
@@ -86,7 +94,6 @@ def process_audio():
                 draw_pygame_frame("current_frame.png")
 
 # Main loop
-import sounddevice as sd
 stream = sd.InputStream(callback=audio_callback, channels=1, samplerate=RATE, blocksize=FFT_WINDOW_SIZE)
 try:
     with stream:
