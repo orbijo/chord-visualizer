@@ -9,7 +9,6 @@ import tqdm
 import time
 
 PATH = 'audio'
-
 # Configuration
 FPS = 15
 FFT_WINDOW_SECONDS = 0.25 # how many seconds of audio make up an FFT window
@@ -19,7 +18,7 @@ TOP_NOTES = 3
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 RESOLUTION = (1280, 720)
 SCALE = 1 # 0.5=QHD(960x540), 1=HD(1920x1080), 2=4K(3840x2160)
-FILENAME = 'cmaj'
+FILENAME = 'out'
 
 # AUDIO_FILE = os.path.join(PATH, FILENAME+'.wav')
 AUDIO_FILE = FILENAME+".wav"
@@ -96,6 +95,7 @@ def find_top_notes(fft,num):
 
   return found
 
+
 directory = 'content'
 if not os.path.exists(directory):
     os.makedirs(directory)
@@ -132,10 +132,10 @@ print(f"Max amplitude: {mx}")
 MAX_DURATION = 5
 MAX_FRAMES = int(FPS * MAX_DURATION)
 
+print("Pass 2...")
 # Pass 2, animation
 for frame_number in tqdm.tqdm(range(min(FRAME_COUNT, MAX_FRAMES))):
     start_time = time.time()
-
     sample = extract_sample(audio, frame_number)
     fft = np.fft.rfft(sample * window)
     fft = np.abs(fft) / mx
